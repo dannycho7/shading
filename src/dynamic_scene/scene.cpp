@@ -46,9 +46,17 @@ Matrix4x4 createWorldToCameraMatrix(const Vector3D& eye, const Vector3D& at, con
 
   // TODO CS248: Camera Matrix
   // Compute the matrix that transforms a point in world space to a point in camera space.
+  Vector3D direction = (eye - at).unit();
+  Vector3D right = cross(up, direction).unit();
 
-  return Matrix4x4::translation(Vector3D(-20,0,-150));
+  Matrix4x4 rotate = Matrix4x4::identity();
+  rotate.column(0) = right;
+  rotate.column(1) = up;
+  rotate.column(2) = direction;
 
+  return rotate.T() * Matrix4x4::translation(eye * -1);
+
+  // return Matrix4x4::translation(Vector3D(-20,0,-150));
 }
 
 // Creates two triangles (6 positions, 18 floats) making up a square
