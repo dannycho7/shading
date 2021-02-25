@@ -14,6 +14,7 @@ uniform bool useMirrorBRDF;         // true if mirror brdf should be used (defau
 
 uniform sampler2D diffuseTextureSampler;
 uniform sampler2D diffuseNormalSampler;
+uniform sampler2D diffuseEnvironmentSampler;
 
 //
 // lighting environment definition. Scenes may contain directional
@@ -92,7 +93,7 @@ vec3 Phong_BRDF(vec3 L, vec3 V, vec3 N, vec3 diffuse_color, vec3 specular_color,
 vec3 SampleEnvironmentMap(vec3 D)
 {
     //
-    // TODO CS248 Environment Mapping
+    // CS248 Environment Mapping
     // sample environment map in direction D.  This requires
     // converting D into spherical coordinates where Y is the polar direction
     // (warning: in our scene, theta is angle with Y axis, which differs from
@@ -107,8 +108,14 @@ vec3 SampleEnvironmentMap(vec3 D)
     //
     // (3) How do you convert theta and phi to normalized texture
     //     coordinates in the domain [0,1]^2?
+    float theta = acos(D.y / length(D));
+    float phi = atan(D.x, D.z);
+    if (phi < 0) {
+        phi += 2 * PI;
+    }
+    vec2 pt = vec2(phi / (2 * PI), theta / PI);
 
-    return vec3(.25, .25, .25);    
+    return texture(diffuseEnvironmentSampler, pt).rgb;    
 }
 
 //
@@ -162,12 +169,11 @@ void main(void)
 
     if (useMirrorBRDF) {
         //
-        // TODO: CS248 Environment Mapping:
+        // CS248 Environment Mapping:
         // compute perfect mirror reflection direction here.
         // You'll also need to implement environment map sampling in SampleEnvironmentMap()
         //
-        vec3 R = normalize(vec3(1.0));
-        //
+        vec3 R = -V + 2 * (dot(V, N) * N);
 
         // sample environment map
         vec3 envColor = SampleEnvironmentMap(R);
