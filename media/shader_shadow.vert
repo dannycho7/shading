@@ -42,9 +42,12 @@ void main(void)
     // to each shadowed light source.
 
 
-    // TODO CS248 Normal Mapping: compute 3x3 tangent space to world space matrix here: tan2world
+    // CS248 Normal Mapping: compute 3x3 tangent space to world space matrix here: tan2world
     //
-       
+    vec3 B = cross(vtx_normal, vtx_tangent);
+    mat3 obj2Tan = mat3(normalize(vtx_tangent), normalize(B), normalize(vtx_normal));
+    mat3 tan2Obj = transpose(obj2Tan);
+    tan2world = tan2Obj * obj2worldNorm;
     // Tips:
     //
     // (1) Make sure you normalize all columns of the matrix so that it is a rotation matrix.
