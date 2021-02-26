@@ -23,6 +23,7 @@ uniform sampler2D diffuseEnvironmentSampler;
 //
 
 #define MAX_NUM_LIGHTS 10
+#define SMOOTHING 0.1
 uniform int  num_directional_lights;
 uniform vec3 directional_light_vectors[MAX_NUM_LIGHTS];
 
@@ -224,7 +225,7 @@ void main(void)
         vec3 dir_to_surface = position - light_pos;
         float angle = acos(dot(normalize(dir_to_surface), spot_light_directions[i])) * 180.0 / PI;
 
-        // CS248 TODO Spotlight Attenuation: compute the attenuation of the spotlight due to two factors:
+        // CS248 Spotlight Attenuation: compute the attenuation of the spotlight due to two factors:
         // (1) distance from the spot light (D^2 falloff)
         // (2) attentuation due to being outside the spotlight's cone 
         //
@@ -249,9 +250,14 @@ void main(void)
         //       facing out area.  Smaller values of SMOOTHING will create hard spotlights.
 
         // CS248: remove this once you perform proper attenuation computations
-        intensity = vec3(0.5, 0.5, 0.5);
-
-
+        // intensity = vec3(0.5, 0.5, 0.5);
+        intensity = intensity / (1 + pow(length(dir_to_surface), 2));
+        if (angle > (1.0 + SMOOTHING) * cone_angle) {
+            intensity = vec3(0.0, 0.0, 0.0);
+        } else if (angle >= (1.0 - SMOOTHING) * cone_angle) {
+            float pcnt = 1.0 - ((angle / cone_angle) - 1.0 + SMOOTHING) / (2 * SMOOTHING);
+            intensity *= pcnt;
+        }
         // Render Shadows for all spot lights
         // CS248 TODO: Shadow Mapping: comute shadowing for spotlight i here 
 
