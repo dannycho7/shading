@@ -44,7 +44,7 @@ Matrix4x4 createPerspectiveMatrix(float fovy, float aspect, float near, float fa
 
 Matrix4x4 createWorldToCameraMatrix(const Vector3D& eye, const Vector3D& at, const Vector3D& up) {
 
-  // TODO CS248: Camera Matrix
+  // CS248: Camera Matrix
   // Compute the matrix that transforms a point in world space to a point in camera space.
   Vector3D direction = (eye - at).unit();
   Vector3D right = cross(up, direction).unit();
@@ -250,7 +250,7 @@ void Scene::renderShadowPass(int shadowedLightIndex) {
     float near = 10.f;
     float far = 400.;
 
-    // TODO CS248: Shadow Mapping
+    // CS248: Shadow Mapping
     // Here we render the shadow map for the given light. You need to accomplish the following:
     // (1) You need to use gl_mgr_->bindFrameBuffer on the correct framebuffer to render into.
     // (2) You need to compute the correct worldToLightNDC matrix to pass into drawShadow by
@@ -274,8 +274,18 @@ void Scene::renderShadowPass(int shadowedLightIndex) {
     //       drawTriangles();  //  <- Framebuffer 100 is bound, since fb_bind is still alive here.
     // 
     // Replaces the following lines with correct implementation.
-    Matrix4x4 worldToLightNDC = Matrix4x4::identity();
-    worldToShadowLight_[shadowedLightIndex].zero();
+    auto fb_bind = gl_mgr_->bindFrameBuffer(shadowFrameBufferId_[shadowedLightIndex]);
+    Vector3D D1(0.0, 1.0, 0.0);
+    if (lightDir.unit() == D1) {
+        D1 = Vector3D(1.0, 0.0, 0.0);
+    }
+
+    Vector3D up = cross(lightDir, cross(D1, lightDir));
+    Matrix4x4 worldToCamera = createWorldToCameraMatrix(lightPos, lightDir + lightPos, up);
+    Matrix4x4 proj = createPerspectiveMatrix(fovy, aspect, near, far);  
+    Matrix4x4 worldToLightNDC = proj * worldToCamera;
+    // pushing the texture coordinate transform to shader frag
+    worldToShadowLight_[shadowedLightIndex] = worldToLightNDC;
 
     glViewport(0, 0, shadowTextureSize_, shadowTextureSize_);
 

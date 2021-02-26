@@ -15,7 +15,7 @@ uniform bool useMirrorBRDF;         // true if mirror brdf should be used (defau
 uniform sampler2D diffuseTextureSampler;
 uniform sampler2D diffuseNormalSampler;
 uniform sampler2D diffuseEnvironmentSampler;
-
+uniform sampler2DArray shadowTextureArraySampler;
 
 //
 // lighting environment definition. Scenes may contain directional
@@ -52,6 +52,8 @@ in vec2 texcoord;     // surface texcoord (uv)
 in vec3 dir2camera;   // vector from surface point to camera
 in mat3 tan2world;    // tangent space to world space transform
 in vec3 vertex_diffuse_color; // surface color
+
+in vec4 light_space_surface_pos[MAX_NUM_LIGHTS];
 
 out vec4 fragColor;
 
@@ -259,8 +261,22 @@ void main(void)
             intensity *= pcnt;
         }
         // Render Shadows for all spot lights
-        // CS248 TODO: Shadow Mapping: comute shadowing for spotlight i here 
-
+        // CS248 Shadow Mapping: comute shadowing for spotlight i here
+        int num_in_shadow = 0;
+        vec3 position_shadowlight = (light_space_surface_pos[i].xyz / light_space_surface_pos[i].w) * 0.5 + vec3(0.5, 0.5, 0.5);
+        vec2 texelSize = textureSize(shadowTextureArraySampler, 0).rg;
+        for (int j=-2; j<=2; j++) {
+            for (int k=-2; k<=2; k++) {
+                vec2 offset = vec2(j,k) / texelSize;
+                // sample shadow map at shadow_uv + offset
+                // and test if the surface is in shadow according to this sample
+                vec2 shadow_uv = position_shadowlight.xy;
+                if (position_shadowlight.z > 0.0005 + texture(shadowTextureArraySampler, vec3(shadow_uv + offset, i)).r) {
+                    ++num_in_shadow;
+                }
+            }
+        }
+        intensity *= 1 - (num_in_shadow / 25.0);
 
 	    vec3 L = normalize(-spot_light_directions[i]);
 		vec3 brdf_color = Phong_BRDF(L, V, N, diffuseColor, specularColor, specularExponent);
